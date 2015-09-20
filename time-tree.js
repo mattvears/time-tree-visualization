@@ -2,7 +2,7 @@
 var time_tree;
 time_tree = (function () {
     var dataset, binData, binLength, nodes, values, minTime, maxTime,
-        childAccessor, startTimeAccessor, durationAccessor,
+        childAccessor, startTimeAccessor, durationAccessor, nameAccessor,
         childDurationInBin, durationInBin, traverse;
 
     var dimArray = function (n, initialValue) {
@@ -30,7 +30,7 @@ time_tree = (function () {
 
     var removeChildDurationFromNodeDuration = function (node, initialDuration) {
         var duration = initialDuration, i = 0;
-        if (node.Children.length > 0) {
+        if (node.Children !== undefined && node.Children.length > 0) {
             while (i < node.Children.length) {
                 duration = duration - getDuration(node.Children[i]);
                 i += 1;
@@ -67,10 +67,10 @@ time_tree = (function () {
 
             msInBin = durationInBin(node, st, et, currentBin.duration);
             if (msInBin > 0) {
-                if (currentBin.bins[node.FriendlyName] === undefined) {
-                    currentBin.bins[node.FriendlyName] = msInBin;
+                if (currentBin.bins[nameAccessor(node)] === undefined) {
+                    currentBin.bins[nameAccessor(node)] = msInBin;
                 } else {
-                    currentBin.bins[node.FriendlyName] += msInBin;
+                    currentBin.bins[nameAccessor(node)] += msInBin;
                 }
             }
 
@@ -188,6 +188,10 @@ time_tree = (function () {
     };
 
     childDurationInBin = function (node, st, et, binDuration) {
+        if (node.Children === undefined) {
+            return 0;
+        }
+
         var childDuration = 0, j = 0;
         while (j < node.Children.length) {
             childDuration += durationInBin(node.Children[j], st, et, binDuration);
@@ -241,6 +245,10 @@ time_tree = (function () {
         return d.duration;
     };
 
+    nameAccessor = function (d) {
+        return d.name;
+    }
+
     return {
         /* sets the data set to be rendered. */
         data: function (ds) {
@@ -253,16 +261,17 @@ time_tree = (function () {
             childAccessor = func;
             return time_tree;
         },
-        /* sets the function to be called which gets the startTime a node,
-           startTime format is javascript's Date getTime() format, 
-           milliseconds since 1 January 1970 00:00:00 UTC. */
-        startTime: function (func) {
+        startTime: function(func) { 
             startTimeAccessor = func;
             return time_tree;
         },
         /* sets the function to be called which gets the millisecond duration of the event */
         duration: function (func) { 
             durationAccessor = func;
+            return time_tree;
+        },
+        name: function (func) { 
+            nameAccessor = func;
             return time_tree;
         },
         nodes: function () {
